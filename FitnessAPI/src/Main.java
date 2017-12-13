@@ -97,28 +97,29 @@ public class Main {
 		double sum = 0;		
 		Credential credential = authorize();
 		Fitness fitness = new Fitness.Builder(
-                Utils.getDefaultTransport(),
-                Utils.getDefaultJsonFactory(),
-                credential //prerequisite
-        ).setApplicationName(APPLICATION_NAME).build();		
+                        Utils.getDefaultTransport(),
+                        Utils.getDefaultJsonFactory(),
+                        credential //prerequisite
+                ).setApplicationName(APPLICATION_NAME).build();		
 		AggregateRequest aggregateRequest = new AggregateRequest();
-        aggregateRequest.setAggregateBy(Collections.singletonList(
-                new AggregateBy()
-                        .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
-        aggregateRequest.setStartTimeMillis(DateMidnight.now().getMillis());
-        aggregateRequest.setEndTimeMillis(System.currentTimeMillis());     
-        AggregateResponse response =  fitness.users().dataset().aggregate("me", aggregateRequest).execute();
-        for (AggregateBucket aggregateBucket : response.getBucket()) {
-            for (Dataset dataset : aggregateBucket.getDataset()) {
-                for (DataPoint dataPoint : dataset.getPoint()) {
-                    for (Value value : dataPoint.getValue()) {
-                        if (value.getIntVal() != null) {
-                            sum += value.getIntVal(); //for steps you only receive int values
+                aggregateRequest.setAggregateBy(Collections.singletonList(
+                        new AggregateBy()
+                                .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
+                aggregateRequest.setStartTimeMillis(DateMidnight.now().getMillis());
+                aggregateRequest.setEndTimeMillis(System.currentTimeMillis());     
+                AggregateResponse response =  fitness.users().dataset().aggregate("me", aggregateRequest).execute();
+                
+                for (AggregateBucket aggregateBucket : response.getBucket()) {
+                    for (Dataset dataset : aggregateBucket.getDataset()) {
+                        for (DataPoint dataPoint : dataset.getPoint()) {
+                            for (Value value : dataPoint.getValue()) {
+                                if (value.getIntVal() != null) {
+                                    sum += value.getIntVal(); //for steps you only receive int values
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
         
         System.out.println("Total steps: "+sum);
 	}
