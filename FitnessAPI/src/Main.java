@@ -27,6 +27,8 @@ import com.google.api.services.fitness.model.AggregateResponse;
 import com.google.api.services.fitness.model.DataPoint;
 import com.google.api.services.fitness.model.Dataset;
 import com.google.api.services.fitness.model.Value;
+import java.io.FileOutputStream;
+import java.util.List;
 
 
 public class Main {
@@ -49,6 +51,8 @@ public class Main {
 
 	/** Global instance of the HTTP transport. */
 	private static HttpTransport HTTP_TRANSPORT;
+        
+        private static List<String> credentials;
 	
 	static {
 		try {
@@ -76,9 +80,9 @@ public class Main {
 	 * @return an authorized Credential object.
 	 * @throws IOException
 	 */
-	public static Credential authorize() throws IOException {
+	public static Credential authorize(String filename) throws IOException {
 		// Load client secrets.
-		InputStreamReader in = new InputStreamReader(new FileInputStream(CLIENT_SECRET)); 
+		InputStreamReader in = new InputStreamReader(new FileInputStream(filename)); 
 		GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, in);
 
 		// Build flow and trigger user authorization request.
@@ -94,34 +98,43 @@ public class Main {
 	
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
 		System.out.println("Getting step count!"); 	
-		double sum = 0;		
-		Credential credential = authorize();
-		Fitness fitness = new Fitness.Builder(
-                        Utils.getDefaultTransport(),
-                        Utils.getDefaultJsonFactory(),
-                        credential //prerequisite
-                ).setApplicationName(APPLICATION_NAME).build();		
-		AggregateRequest aggregateRequest = new AggregateRequest();
-                aggregateRequest.setAggregateBy(Collections.singletonList(
-                        new AggregateBy()
-                                .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
-                aggregateRequest.setStartTimeMillis(DateMidnight.now().getMillis());
-                aggregateRequest.setEndTimeMillis(System.currentTimeMillis());     
-                AggregateResponse response =  fitness.users().dataset().aggregate("me", aggregateRequest).execute();
+		int sum = 0;	
+                Gamification games = new Gamification();
+                String username;
                 
-                for (AggregateBucket aggregateBucket : response.getBucket()) {
-                    for (Dataset dataset : aggregateBucket.getDataset()) {
-                        for (DataPoint dataPoint : dataset.getPoint()) {
-                            for (Value value : dataPoint.getValue()) {
-                                if (value.getIntVal() != null) {
-                                    sum += value.getIntVal(); //for steps you only receive int values
+                for(String cred: credentials){
+                    Credential credential = authorize(cred);
+                    Fitness fitness = new Fitness.Builder(
+                            Utils.getDefaultTransport(),
+                            Utils.getDefaultJsonFactory(),
+                            credential //prerequisite
+                    ).setApplicationName(APPLICATION_NAME).build();		
+                    AggregateRequest aggregateRequest = new AggregateRequest();
+                    aggregateRequest.setAggregateBy(Collections.singletonList(
+                            new AggregateBy()
+                                    .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
+                    aggregateRequest.setStartTimeMillis(DateMidnight.now().getMillis());
+                    aggregateRequest.setEndTimeMillis(System.currentTimeMillis());     
+                    AggregateResponse response =  fitness.users().dataset().aggregate("me", aggregateRequest).execute();
+
+                    for (AggregateBucket aggregateBucket : response.getBucket()) {
+                        for (Dataset dataset : aggregateBucket.getDataset()) {
+                            for (DataPoint dataPoint : dataset.getPoint()) {
+                                for (Value value : dataPoint.getValue()) {
+                                    if (value.getIntVal() != null) {
+                                        sum += value.getIntVal(); //for steps you only receive int values
+                                    }
                                 }
                             }
                         }
                     }
+                    
+                    username = cred.split(".json")[0];
+                   
+                    if(!games.getUser(username)){
+                        games.insertUsers(username,sum);
+                    }
                 }
-        
-        System.out.println("Total steps: "+sum);
 	}
 
 }

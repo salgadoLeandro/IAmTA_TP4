@@ -1,5 +1,6 @@
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Utilizador {
@@ -7,17 +8,18 @@ public class Utilizador {
     private int id;
     private int pontos;
     private String level;
-    private Map<String,Achievement> achievements;
+    private List<Integer> passosDiarios;
+    private Map<String, Achievement> achievements;
     
-    public Utilizador(String username,int id) {
+    public Utilizador(String username,int id,int pt) {
         this.username = username;
         this.id = id;
-        this.pontos = 0;
+        this.pontos = pt;
         this.level = "begginer";
         this.achievements = new HashMap<> ();
     }
     
-    public Utilizador(String username, int id, int pontos, String level, Map<String, Achievement> achievements) {
+    public Utilizador(String username, int id, int pontos, String level, Map<String,Achievement> achievements) {
         this.username = username;
         this.id = id;
         this.pontos = pontos;
@@ -62,6 +64,13 @@ public class Utilizador {
     }
 
     public void setAchievements(Map<String, Achievement> achievements) {
-        this.achievements = achievements;
+        achievements.entrySet().stream().forEach((kp) -> {
+            this.achievements.put(kp.getKey(),kp.getValue());
+        });
+    }
+    
+    public void insertAchievement( Achievement a){
+        this.achievements.put(a.getName(), a);
+        this.pontos += a.getPontos();
     }
 }
