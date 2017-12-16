@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.*;
+import java.nio.file.*;
 import java.security.GeneralSecurityException;
 
 import org.joda.time.DateMidnight;
@@ -24,6 +25,7 @@ import com.google.api.services.fitness.model.AggregateResponse;
 import com.google.api.services.fitness.model.DataPoint;
 import com.google.api.services.fitness.model.Dataset;
 import com.google.api.services.fitness.model.Value;
+import java.nio.file.Files;
 
 
 public class Main {
@@ -72,6 +74,7 @@ public class Main {
 	/**
 	 * Creates an authorized Credential object.
 	 * 
+         * @param filename name the of the client secret to authorize
 	 * @return an authorized Credential object.
 	 * @throws IOException
 	 */
@@ -89,70 +92,110 @@ public class Main {
 	}
 	
 	public static List<String> getJSONS (String directory) {
-            List<String> textFiles = new ArrayList<String>();
+            List<String> textFiles = new ArrayList<>();
             File dir = new File(directory);
-                for (File file : dir.listFiles()) {
-                    if (file.getName().endsWith((".json"))) {
-                      textFiles.add(file.getName());
-                    }
+            for (File file : dir.listFiles()) {
+                if (file.getName().endsWith((".json"))) {
+                  textFiles.add(file.getName());
                 }
+            }
             return textFiles;
 	}
+        
+        public static List<String> getFiles(String directory){
+            List<String> textFiles = new ArrayList<>();
+            File dir = new File(directory);
+            for(File file : dir.listFiles()) {
+                if(file.getName().endsWith(".ups")){
+                    textFiles.add(file.getName());
+                }
+            }
+            return textFiles;
+        }
 	
-	
-	public static void main(String[] args) throws IOException, GeneralSecurityException {
-            Date begin = new GregorianCalendar(2017, Calendar.DECEMBER, 6).getTime();
-            long startime = begin.getTime();
-            Calendar cal2 = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-            long endtime = startime;
-            System.out.println(startime);
-            int nDays = cal2.get(Calendar.DAY_OF_MONTH)-6+1;
-            double [] steps = new double[nDays];
-		
-            System.out.println("Getting step count!"); 	
-            int sum = 0;	
-            Gamification games = new Gamification();
+        public static void generatePointsFile(String filename) throws Exception{
+            int nDays;
+            double[] steps;
+            long starttime, endtime;
             String username;
-
-            for(String cred: credentials){
-                Credential credential = authorize(cred);
-                Fitness fitness = new Fitness.Builder(
+            Date begin;
+            Calendar cal2;
+            StringBuilder sb;
+            
+            begin = new GregorianCalendar(2017, Calendar.DECEMBER, 6).getTime();
+            starttime = begin.getTime();
+            cal2 = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            endtime = starttime;
+            nDays = cal2.get(Calendar.DAY_OF_MONTH)-6+1;
+            steps = new double[nDays];
+            sb = new StringBuilder();
+            
+            Credential credential = authorize(filename);
+            Fitness fitness = new Fitness.Builder(
                         Utils.getDefaultTransport(),
                         Utils.getDefaultJsonFactory(),
                         credential //prerequisite
-                ).setApplicationName(APPLICATION_NAME).build();		
-                AggregateRequest aggregateRequest = new AggregateRequest();
-                aggregateRequest.setAggregateBy(Collections.singletonList(
-                        new AggregateBy()
-                                .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
-                
-                for(int i = 0; i <= nDays; ++i){
-                    endtime = i == nDays ? System.currentTimeMillis() : endtime + 86400000;
-                    aggregateRequest.setStartTimeMillis(startime);
-                    aggregateRequest.setEndTimeMillis(endtime);     
-                    AggregateResponse response =  fitness.users().dataset().aggregate("me", aggregateRequest).execute();
-                    
-                    for (AggregateBucket aggregateBucket : response.getBucket()) {
-                        for (Dataset dataset : aggregateBucket.getDataset()) {
-                            for (DataPoint dataPoint : dataset.getPoint()) {
-                                for (Value value : dataPoint.getValue()) {
-                                    if (value.getIntVal() != null) {
-                                        sum += value.getIntVal(); //for steps you only receive int values
-                                    }
+            ).setApplicationName(APPLICATION_NAME).build();		
+            AggregateRequest aggregateRequest = new AggregateRequest();
+            aggregateRequest.setAggregateBy(Collections.singletonList(
+                    new AggregateBy()
+                            .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
+            
+            for(int i = 0; i <= nDays; ++i){
+                endtime = i == nDays ? System.currentTimeMillis() : endtime + 86400000;
+                aggregateRequest.setStartTimeMillis(starttime);
+                aggregateRequest.setEndTimeMillis(endtime);     
+                AggregateResponse response = fitness.users().dataset().aggregate("me", aggregateRequest).execute();
+
+                for (AggregateBucket aggregateBucket : response.getBucket()) {
+                    for (Dataset dataset : aggregateBucket.getDataset()) {
+                        for (DataPoint dataPoint : dataset.getPoint()) {
+                            for (Value value : dataPoint.getValue()) {
+                                if (value.getIntVal() != null) {
+                                    steps[i] += value.getIntVal(); //for steps you only receive int values
                                 }
                             }
                         }
                     }
-                    startime = endtime;
-                    System.out.printf("Total steps in day %d: %d\n", i, (int)steps[i]);
                 }
-
-                username = cred.split(".json")[0];
-
-                if(!games.getUser(username)){
-                    games.insertUsers(username,sum);
-                }
+                starttime = endtime;
+                //System.out.printf("Total steps in day %d: %d\n", i, (int)steps[i]);
+                sb.append((int)steps[i]).append("\n");
             }
+            username = filename.split(".json")[0];
+            try(PrintWriter out = new PrintWriter(username + ".ups")){
+                out.print(sb.toString());
+            }
+        }
+        
+        public static void loadUsers(Gamification g, List<String> files) throws Exception{
+            String username;
+            List<Integer> points;
+            Path path;
+            for(String file : files){
+                username = file.split(".ups")[0];
+                path = Paths.get(file);
+                points = new ArrayList<>();
+                for(String line : Files.readAllLines(path)){
+                    points.add(Integer.parseInt(line));
+                }
+                g.insertUser(username, points);
+            }
+        }
+        
+	public static void main(String[] args) throws Exception {
+            
+            if(args.length > 0){
+                if(args.length == 2){
+                    if(args[0].equals("-g")){
+                        generatePointsFile(args[1]);
+                        return;
+                    }
+                } else { return; }
+            }
+            
+            Gamification games = new Gamification();
+            loadUsers(games, getFiles(System.getProperty("user.dir")));
 	}
 
 }
