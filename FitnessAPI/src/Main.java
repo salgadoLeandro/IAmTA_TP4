@@ -1,9 +1,6 @@
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.util.*;
 import java.security.GeneralSecurityException;
-import java.util.Collections;
-import java.util.Set;
 
 import org.joda.time.DateMidnight;
 
@@ -27,8 +24,6 @@ import com.google.api.services.fitness.model.AggregateResponse;
 import com.google.api.services.fitness.model.DataPoint;
 import com.google.api.services.fitness.model.Dataset;
 import com.google.api.services.fitness.model.Value;
-import java.io.FileOutputStream;
-import java.util.List;
 
 
 public class Main {
@@ -55,13 +50,13 @@ public class Main {
         private static List<String> credentials;
 	
 	static {
-		try {
-			HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-			DATA_STORE_FACTORY = new FileDataStoreFactory(DATA_STORE_DIR);
-		} catch (Throwable t) {
-			t.printStackTrace();
-			System.exit(1);
-		}
+            try {
+                HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+                DATA_STORE_FACTORY = new FileDataStoreFactory(DATA_STORE_DIR);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                System.exit(1);
+            }
 	}
 	
 	
@@ -81,42 +76,62 @@ public class Main {
 	 * @throws IOException
 	 */
 	public static Credential authorize(String filename) throws IOException {
-		// Load client secrets.
-		InputStreamReader in = new InputStreamReader(new FileInputStream(filename)); 
-		GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, in);
+            // Load client secrets.
+            InputStreamReader in = new InputStreamReader(new FileInputStream(filename)); 
+            GoogleClientSecrets clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, in);
 
-		// Build flow and trigger user authorization request.
-		GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY,
-				clientSecrets, SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).build();
-		Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
-		System.out.println("Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
-		return credential;
+            // Build flow and trigger user authorization request.
+            GoogleAuthorizationCodeFlow flow = new GoogleAuthorizationCodeFlow.Builder(HTTP_TRANSPORT, JSON_FACTORY,
+                            clientSecrets, SCOPES).setDataStoreFactory(DATA_STORE_FACTORY).build();
+            Credential credential = new AuthorizationCodeInstalledApp(flow, new LocalServerReceiver()).authorize("user");
+            System.out.println("Credentials saved to " + DATA_STORE_DIR.getAbsolutePath());
+            return credential;
+	}
+	
+	public static List<String> getJSONS (String directory) {
+            List<String> textFiles = new ArrayList<String>();
+            File dir = new File(directory);
+                for (File file : dir.listFiles()) {
+                    if (file.getName().endsWith((".json"))) {
+                      textFiles.add(file.getName());
+                    }
+                }
+            return textFiles;
 	}
 	
 	
-	
-	
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
-		System.out.println("Getting step count!"); 	
-		int sum = 0;	
-                Gamification games = new Gamification();
-                String username;
-                
-                for(String cred: credentials){
-                    Credential credential = authorize(cred);
-                    Fitness fitness = new Fitness.Builder(
-                            Utils.getDefaultTransport(),
-                            Utils.getDefaultJsonFactory(),
-                            credential //prerequisite
-                    ).setApplicationName(APPLICATION_NAME).build();		
-                    AggregateRequest aggregateRequest = new AggregateRequest();
-                    aggregateRequest.setAggregateBy(Collections.singletonList(
-                            new AggregateBy()
-                                    .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
-                    aggregateRequest.setStartTimeMillis(DateMidnight.now().getMillis());
-                    aggregateRequest.setEndTimeMillis(System.currentTimeMillis());     
-                    AggregateResponse response =  fitness.users().dataset().aggregate("me", aggregateRequest).execute();
+            Date begin = new GregorianCalendar(2017, Calendar.DECEMBER, 6).getTime();
+            long startime = begin.getTime();
+            Calendar cal2 = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            long endtime = startime;
+            System.out.println(startime);
+            int nDays = cal2.get(Calendar.DAY_OF_MONTH)-6+1;
+            double [] steps = new double[nDays];
+		
+            System.out.println("Getting step count!"); 	
+            int sum = 0;	
+            Gamification games = new Gamification();
+            String username;
 
+            for(String cred: credentials){
+                Credential credential = authorize(cred);
+                Fitness fitness = new Fitness.Builder(
+                        Utils.getDefaultTransport(),
+                        Utils.getDefaultJsonFactory(),
+                        credential //prerequisite
+                ).setApplicationName(APPLICATION_NAME).build();		
+                AggregateRequest aggregateRequest = new AggregateRequest();
+                aggregateRequest.setAggregateBy(Collections.singletonList(
+                        new AggregateBy()
+                                .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
+                
+                for(int i = 0; i <= nDays; ++i){
+                    endtime = i == nDays ? System.currentTimeMillis() : endtime + 86400000;
+                    aggregateRequest.setStartTimeMillis(startime);
+                    aggregateRequest.setEndTimeMillis(endtime);     
+                    AggregateResponse response =  fitness.users().dataset().aggregate("me", aggregateRequest).execute();
+                    
                     for (AggregateBucket aggregateBucket : response.getBucket()) {
                         for (Dataset dataset : aggregateBucket.getDataset()) {
                             for (DataPoint dataPoint : dataset.getPoint()) {
@@ -128,13 +143,16 @@ public class Main {
                             }
                         }
                     }
-                    
-                    username = cred.split(".json")[0];
-                   
-                    if(!games.getUser(username)){
-                        games.insertUsers(username,sum);
-                    }
+                    startime = endtime;
+                    System.out.printf("Total steps in day %d: %d\n", i, (int)steps[i]);
                 }
+
+                username = cred.split(".json")[0];
+
+                if(!games.getUser(username)){
+                    games.insertUsers(username,sum);
+                }
+            }
 	}
 
 }

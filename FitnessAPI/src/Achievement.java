@@ -1,9 +1,9 @@
-import org.joda.time.DateTime;
+import java.util.Date;
 
 public class Achievement {
     private int pontos;
     private String name;
-    private DateTime date;
+    private Date date;
         
     public Achievement(){
         this.pontos = 0;
@@ -11,7 +11,7 @@ public class Achievement {
         this.date = null;
     }
     
-    public Achievement(int pontos, String name, DateTime date) {
+    public Achievement(int pontos, String name, Date date) {
         this.pontos = pontos;
         this.name = name;
         this.date = date;
@@ -33,11 +33,11 @@ public class Achievement {
         this.name = name;
     }
 
-    public DateTime getDate() {
+    public Date getDate() {
         return date;
     }
 
-    public void setDate(DateTime date) {
+    public void setDate(Date date) {
         this.date = date;
     }
     
@@ -58,7 +58,7 @@ public class Achievement {
     }
     
     public static String typeOFAchievement(int pontosExtra){
-        
+        return null;
     }
     
 }
