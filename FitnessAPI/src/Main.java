@@ -118,7 +118,6 @@ public class Main {
             long starttime, endtime;
             String username;
             Date begin;
-            Calendar cal2;
             StringBuilder sb;
             
             begin = new GregorianCalendar(2017, Calendar.DECEMBER, 6).getTime();
@@ -126,7 +125,7 @@ public class Main {
             Date now = new Date();
             long diff = now.getTime() - starttime;
             endtime = starttime;
-            nDays = ((diff % 86400000)==0) ? (int)(diff / (86400000)) : (int)(diff / (86400000)) + 1;
+            nDays = ((diff % DAY_MILLIS)==0) ? (int)(diff / (DAY_MILLIS)) : (int)(diff / (DAY_MILLIS)) + 1;
             steps = new double[nDays];
             sb = new StringBuilder();
             
