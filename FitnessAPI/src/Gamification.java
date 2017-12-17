@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 public class Gamification {
+    private static final double mult = 0.08;
+    
     private Map<String,Utilizador> utilizadores;
     
     public Gamification() {
@@ -23,11 +25,11 @@ public class Gamification {
         return rankingUsers;
     }
 
-    public int stepsToPoints(int passos){
+    public static int stepsToPoints(int passos){
         return passos/2;
     }
     
-    private int getUserLevel(int pontos){
+    public static int getUserLevel(int pontos){
         return pontos/2500;
     }
 
@@ -72,7 +74,6 @@ public class Gamification {
         for(Map.Entry<String, Utilizador> kp : utilizadores.entrySet()){
             u = kp.getValue();
             u.setPontos(stepsToPoints(u.getTotalSteps()));
-            
         }
     }
 
@@ -82,8 +83,8 @@ public class Gamification {
         for(Map.Entry<String, Utilizador> kp : utilizadores.entrySet()){
             u = kp.getValue();
             for(Integer i : u.getPassos()){
-                steps = (int)(isteps * (1.0 + (multiplier * 0.05)));
-                points += stepsToPoints(steps);
+                steps = multiply(isteps, multiplier);
+                points += multiply(stepsToPoints(isteps), multiplier);
                 if (i >= steps){
                     ++multiplier;
                 } else if (multiplier > 0) {
@@ -93,5 +94,9 @@ public class Gamification {
             u.updatePoints(points);
             points = multiplier = steps = 0;
         }
+    }
+    
+    private int multiply(int value, int multiplier){
+        return (int)(value * (1.0 + (multiplier * mult)));
     }
 }

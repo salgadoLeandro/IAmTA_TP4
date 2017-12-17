@@ -183,9 +183,11 @@ public class Main {
         }
         
         private static void printRanking(List<Utilizador> utilizadores){
-            int i = 1;
+            int i = 1, pontos;
             for(Utilizador u : utilizadores){
-                System.out.printf("% 2d -> %s (%s lvl %d) : %d\n", i++, u.getUsername(), u.getLevel(), u.getPontos()/2500, u.getPontos());
+                pontos = u.getPontos();
+                System.out.printf("% 2d -> %s (%s lvl %d) : %d\n", i++, 
+                        u.getUsername(), u.getLevel(), Gamification.getUserLevel(pontos), pontos);
             }
         }
         
