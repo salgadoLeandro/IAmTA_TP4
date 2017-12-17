@@ -123,9 +123,10 @@ public class Main {
             
             begin = new GregorianCalendar(2017, Calendar.DECEMBER, 6).getTime();
             starttime = begin.getTime();
-            cal2 = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+            Date now = new Date();
+            long diff = now.getTime() - starttime;
             endtime = starttime;
-            nDays = cal2.get(Calendar.DAY_OF_MONTH)-6+1;
+            nDays = ((diff % 86400000)==0) ? (int)(diff / (86400000)) : (int)(diff / (86400000)) + 1;
             steps = new double[nDays];
             sb = new StringBuilder();
             
