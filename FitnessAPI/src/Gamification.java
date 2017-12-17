@@ -86,7 +86,7 @@ public class Gamification {
                 steps = multiply(isteps, multiplier);
                 points += multiply(stepsToPoints(isteps), multiplier);
                 if (i >= steps){
-                    ++multiplier;
+                    if(multiplier < 7) { ++multiplier; }
                 } else if (multiplier > 0) {
                     --multiplier;
                 }
