@@ -7,14 +7,12 @@ public class Utilizador {
     private int pontos;
     private String level;
     private List<Integer> passosDiarios;
-    private Map<String, Achievement> achievements;
     
     public Utilizador(String username, int id) {
         this.username = username;
         this.id = id;
         this.pontos = 0;
         this.level = "beginner";
-        this.achievements = new HashMap<>();
         this.passosDiarios = new ArrayList<>();
     }
     
@@ -23,10 +21,8 @@ public class Utilizador {
         this.id = u.getId();
         this.pontos = u.getPontos();
         this.level = u.getLevel();
-        this.achievements = new HashMap<>();
-        this.setAchievements(u.getAchievements());
         this.passosDiarios = new ArrayList<>();
-        
+        for(Integer i : u.getPassos()) { this.passosDiarios.add(i); }
     }
     
     public final String getUsername() {
@@ -60,23 +56,24 @@ public class Utilizador {
     public final void setLevel(String level) {
         this.level = level;
     }
-
-    public final Map<String, Achievement> getAchievements() {
-        return achievements;
-    }
-
-    public final void setAchievements(Map<String, Achievement> achievements) {
-        achievements.entrySet().stream().forEach((kp) -> {
-            this.achievements.put(kp.getKey(),kp.getValue());
-        });
-    }
-    
-    public final void insertAchievement(Achievement a){
-        this.achievements.put(a.getName(), a);
-        this.pontos += a.getPontos();
-    }
     
     public final void addSteps(int passos){
         passosDiarios.add(passos);
+    }
+    
+    public final List<Integer> getPassos(){
+        List<Integer> ret = new ArrayList<>();
+        for(Integer i : passosDiarios) { ret.add(i); }
+        return ret;
+    }
+    
+    public final int getTotalSteps(){
+        int ret = 0;
+        for(Integer i : passosDiarios){ ret += i; }
+        return ret;
+    }
+    
+    public final void updatePoints(int points){
+        this.pontos += points;
     }
 }

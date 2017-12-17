@@ -2,43 +2,54 @@ import java.util.Date;
 
 public class Achievement {
     private int pontos;
-    private String name;
+    private int multiplier;
     private Date date;
         
     public Achievement(){
         this.pontos = 0;
-        this.name = " ";
         this.date = null;
+        this.multiplier = 0;
     }
     
-    public Achievement(int pontos, String name, Date date) {
+    public Achievement(int pontos, Date date) {
         this.pontos = pontos;
-        this.name = name;
         this.date = date;
+        this.multiplier = 1;
     }
     
-    public int getPontos() {
+    public Achievement(Achievement a){
+        this.pontos = a.getPontos();
+        this.date = a.getDate();
+        this.multiplier = a.getMultiplier();
+    }
+    
+    public final int getPontos() {
         return pontos;
     }
 
-    public void setPontos(int pontos) {
+    public final void setPontos(int pontos) {
         this.pontos = pontos;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public Date getDate() {
+    public final Date getDate() {
         return date;
     }
 
-    public void setDate(Date date) {
+    public final void setDate(Date date) {
         this.date = date;
     }
     
+    private final int getMultiplier(){
+        return multiplier;
+    }
+    
+    @Override
+    public Achievement clone(){
+        return new Achievement(this);
+    }
+ 
+    
+    public static Achievement nextAchievement(Achievement a){
+        return null;
+    }
 }

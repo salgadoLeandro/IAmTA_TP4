@@ -1,7 +1,6 @@
 import java.io.*;
 import java.util.*;
 import java.nio.file.*;
-import java.security.GeneralSecurityException;
 
 import org.joda.time.DateMidnight;
 
@@ -49,7 +48,7 @@ public class Main {
 	/** Global instance of the HTTP transport. */
 	private static HttpTransport HTTP_TRANSPORT;
         
-        private static List<String> credentials;
+        public static final long DAY_MILLIS = 86400000;
 	
 	static {
             try {
@@ -142,7 +141,7 @@ public class Main {
                             .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
             
             for(int i = 0; i < nDays; ++i){
-                endtime = i == nDays ? System.currentTimeMillis() : endtime + 86400000;
+                endtime = i == nDays ? System.currentTimeMillis() : endtime + DAY_MILLIS;
                 aggregateRequest.setStartTimeMillis(starttime);
                 aggregateRequest.setEndTimeMillis(endtime);     
                 AggregateResponse response = fitness.users().dataset().aggregate("me", aggregateRequest).execute();
@@ -183,6 +182,13 @@ public class Main {
             }
         }
         
+        private static void printRanking(List<Utilizador> utilizadores){
+            int i = 1;
+            for(Utilizador u : utilizadores){
+                System.out.printf("% 2d -> %s (%s lvl %d) : %d\n", i++, u.getUsername(), u.getLevel(), u.getPontos()/2500, u.getPontos());
+            }
+        }
+        
 	public static void main(String[] args) throws Exception {
             
             if(args.length > 0){
@@ -196,6 +202,10 @@ public class Main {
             
             Gamification games = new Gamification();
             loadUsers(games, getFiles(System.getProperty("user.dir")));
+            games.updateUserPoints();
+            games.updateUserAchievements();
+            games.updateUserLevel();
+            printRanking(games.Ranking());
 	}
 
 }

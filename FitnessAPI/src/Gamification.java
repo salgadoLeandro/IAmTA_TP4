@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,19 +11,19 @@ public class Gamification {
     }
     
     //Função que calcula a listagem do ranking de utilizadores
-    public List<Utilizador> Ranking(Map<String,Utilizador> users) {
+    public List<Utilizador> Ranking() {
         List<Utilizador> rankingUsers = new ArrayList<>();
 
-        users.entrySet().stream().forEach((kp) -> {
+        utilizadores.entrySet().stream().forEach((kp) -> {
             rankingUsers.add(kp.getValue());
         });
 
-        rankingUsers.sort((Utilizador u1, Utilizador u2) -> ((Integer)u1.getPontos()).compareTo(u2.getPontos()));
+        rankingUsers.sort((Utilizador u1, Utilizador u2) -> ((Integer)u2.getPontos()).compareTo(u1.getPontos()));
 
         return rankingUsers;
     }
 
-    public int pointsOfDay(int passos){
+    public int stepsToPoints(int passos){
         return passos/2;
     }
     
@@ -65,15 +64,34 @@ public class Gamification {
             }else if(nivel <= 2000){
                 kp.getValue().setLevel("Sanic");
             }
-
+        }
+    }
+    
+    public void updateUserPoints() {
+        Utilizador u;
+        for(Map.Entry<String, Utilizador> kp : utilizadores.entrySet()){
+            u = kp.getValue();
+            u.setPontos(stepsToPoints(u.getTotalSteps()));
+            
         }
     }
 
-    public void didUserGetAchievenents(String username, int passos, Date dt){
-        Achievement a = new Achievement();
-        a.setPontos(0);
-        a.setName("");
-        a.setDate(dt);
-        utilizadores.get(username).insertAchievement(a);
+    public void updateUserAchievements(){
+        int multiplier = 0, isteps = 10000, points = 0, steps = 0;
+        Utilizador u;
+        for(Map.Entry<String, Utilizador> kp : utilizadores.entrySet()){
+            u = kp.getValue();
+            for(Integer i : u.getPassos()){
+                steps = (int)(isteps * (1.0 + (multiplier * 0.05)));
+                points += stepsToPoints(steps);
+                if (i >= steps){
+                    ++multiplier;
+                } else if (multiplier > 0) {
+                    --multiplier;
+                }
+            }
+            u.updatePoints(points);
+            points = multiplier = steps = 0;
+        }
     }
 }
