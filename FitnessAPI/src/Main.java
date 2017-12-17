@@ -141,7 +141,7 @@ public class Main {
                     new AggregateBy()
                             .setDataSourceId("derived:com.google.step_count.delta:com.google.android.gms:estimated_steps")));
             
-            for(int i = 0; i <= nDays; ++i){
+            for(int i = 0; i < nDays; ++i){
                 endtime = i == nDays ? System.currentTimeMillis() : endtime + 86400000;
                 aggregateRequest.setStartTimeMillis(starttime);
                 aggregateRequest.setEndTimeMillis(endtime);     
